@@ -425,6 +425,5 @@ Follow this step-by-step walkthrough to present the project to university examin
 ## 👨‍💻 Authors & Academic Attribution
 
 * **Project Name:** Azure Secure File Storage and Sharing System
-* **Domain:** Cloud Computing Laboratory (CCLab)
 * **Cloud Provider:** Microsoft Azure
 * **License:** MIT License
