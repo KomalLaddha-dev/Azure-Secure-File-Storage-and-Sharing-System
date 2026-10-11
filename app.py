@@ -46,8 +46,15 @@ from azure_storage import (
     sanitize_filename
 )
 
+# Absolute path to ensure templates and static folders resolve under all WSGI runners
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 # Initialize Flask application
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(basedir, "templates"),
+    static_folder=os.path.join(basedir, "static")
+)
 app.config.from_object(Config)
 
 # Initialize Azure Storage Service instance
@@ -90,6 +97,12 @@ def inject_global_context():
 # ==============================================================================
 # Web & Authentication Routes
 # ==============================================================================
+
+@app.route("/robots.txt")
+@app.route("/robots933456.txt")
+def warmup_probe():
+    """Responds immediately to Azure warmup probe."""
+    return "User-agent: *\nDisallow:", 200, {"Content-Type": "text/plain"}
 
 @app.route("/")
 def index():
@@ -440,7 +453,10 @@ def handle_large_file(e):
 def handle_not_found(e):
     if request.path.startswith("/api/"):
         return jsonify({"success": False, "error": "Requested API resource not found."}), 404
-    return render_template("404.html"), 404
+    try:
+        return render_template("404.html"), 404
+    except Exception:
+        return "<!DOCTYPE html><html><body><h1>404 Not Found</h1><p>The requested page was not found.</p><a href='/'>Go to Home</a></body></html>", 404
 
 
 @app.errorhandler(500)
@@ -450,7 +466,10 @@ def handle_server_error(e):
             "success": False,
             "error": "Internal server error occurred while processing cloud request."
         }), 500
-    return render_template("error.html", error="An internal server error occurred."), 500
+    try:
+        return render_template("error.html", error="An internal server error occurred."), 500
+    except Exception:
+        return "<!DOCTYPE html><html><body><h1>500 Internal Server Error</h1><p>A server error occurred.</p><a href='/'>Go to Home</a></body></html>", 500
 
 
 # ==============================================================================
@@ -458,7 +477,8 @@ def handle_server_error(e):
 # ==============================================================================
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    debug_mode = os.getenv("FLASK_ENV", "development").lower() == "development"
+    raw_port = os.getenv("PORT") or os.getenv("WEBSITES_PORT") or "5000"
+    port = int(raw_port) if str(raw_port).isdigit() else 5000
+    debug_mode = (os.getenv("FLASK_ENV") or "development").lower() == "development"
     print(f"[*] Starting Azure Secure File Storage on port {port} (debug={debug_mode})...")
     app.run(host="0.0.0.0", port=port, debug=debug_mode)

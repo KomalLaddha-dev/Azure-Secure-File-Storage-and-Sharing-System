@@ -85,8 +85,8 @@ class AzureStorageService:
     """
 
     def __init__(self, connection_string=None, container_name=None):
-        self.connection_string = (connection_string or Config.AZURE_STORAGE_CONNECTION_STRING).strip()
-        self.container_name = (container_name or Config.AZURE_STORAGE_CONTAINER_NAME).strip()
+        self.connection_string = (connection_string if connection_string is not None else Config.AZURE_STORAGE_CONNECTION_STRING).strip()
+        self.container_name = (container_name if container_name is not None else Config.AZURE_STORAGE_CONTAINER_NAME).strip()
         self._blob_service_client = None
         self._container_client = None
 

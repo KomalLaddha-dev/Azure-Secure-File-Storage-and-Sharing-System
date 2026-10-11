@@ -11,18 +11,22 @@ load_dotenv()
 
 class Config:
     # Flask Session Secret Key
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key-change-in-production-azure-cclab")
+    SECRET_KEY = os.getenv("SECRET_KEY") or "dev-insecure-key-change-in-production-azure-cclab"
 
     # Environment
-    FLASK_ENV = os.getenv("FLASK_ENV", "development")
+    FLASK_ENV = os.getenv("FLASK_ENV") or "development"
     IS_PRODUCTION = FLASK_ENV.lower() == "production"
 
     # Azure Blob Storage Configuration
-    AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "").strip()
-    AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_STORAGE_CONTAINER_NAME", "secure-files-container").strip()
+    AZURE_STORAGE_CONNECTION_STRING = (os.getenv("AZURE_STORAGE_CONNECTION_STRING") or "").strip()
+    AZURE_STORAGE_CONTAINER_NAME = (os.getenv("AZURE_STORAGE_CONTAINER_NAME") or "secure-files-container").strip()
 
     # Upload Size Limits (Default: 25 MB)
-    MAX_CONTENT_LENGTH_MB = int(os.getenv("MAX_CONTENT_LENGTH_MB", "25"))
+    raw_mb = os.getenv("MAX_CONTENT_LENGTH_MB") or "25"
+    try:
+        MAX_CONTENT_LENGTH_MB = int(raw_mb.strip()) if str(raw_mb).strip().isdigit() else 25
+    except Exception:
+        MAX_CONTENT_LENGTH_MB = 25
     MAX_CONTENT_LENGTH = MAX_CONTENT_LENGTH_MB * 1024 * 1024
 
     # Whitelist of allowed extensions for security
@@ -47,20 +51,22 @@ class Config:
     # Can be configured via APP_USERS JSON or individual fallback env vars
     @staticmethod
     def get_users():
+        demo_defaults = {
+            "student": "azurepass123",
+            "faculty": "cloudpass456",
+            "admin": "adminpass789"
+        }
         raw_users = os.getenv("APP_USERS", "")
         if raw_users:
             try:
                 users = json.loads(raw_users)
                 if isinstance(users, dict) and users:
-                    return users
+                    demo_defaults.update(users)
+                    return demo_defaults
             except Exception:
                 pass
         
-        # Fallback to single/default demo accounts
         default_user = os.getenv("DEFAULT_USERNAME", "student")
         default_pass = os.getenv("DEFAULT_PASSWORD", "azurepass123")
-        return {
-            default_user: default_pass,
-            "faculty": "cloudpass456",
-            "admin": "adminpass789"
-        }
+        demo_defaults[default_user] = default_pass
+        return demo_defaults
