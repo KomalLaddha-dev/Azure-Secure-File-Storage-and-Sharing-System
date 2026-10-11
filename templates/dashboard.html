@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Azure Secure File Storage and Sharing System{% endblock %}
+
+{% block content %}
+<div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" id="appSidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="brand-title">Azure Storage</div>
+                <div class="brand-sub">Cloud Computing</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Dashboard
+            </button>
+            <button class="nav-item" onclick="document.getElementById('filesSection').scrollIntoView({behavior: 'smooth'})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                My Files
+            </button>
+            <button class="nav-item" onclick="document.getElementById('uploadSection').scrollIntoView({behavior: 'smooth'})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload Files
+            </button>
+            <button class="nav-item" onclick="document.getElementById('statsSection').scrollIntoView({behavior: 'smooth'})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                Storage Usage
+            </button>
+            <button class="nav-item" id="viewArchBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+                </svg>
+                Cloud Architecture
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-badge">
+                <div class="user-avatar">{{ user[:2].upper() }}</div>
+                <div class="user-info">
+                    <div class="user-name" title="{{ user }}">{{ user }}</div>
+                    <div class="user-role font-mono">prefix: {{ user }}/</div>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: #E2E8F0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+        <!-- Sticky Header Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle Sidebar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <h1 class="page-title">Secure File Storage Dashboard</h1>
+            </div>
+
+            <div class="header-right">
+                <!-- Azure Storage Live Health Badge -->
+                <div class="health-badge" id="healthBadge" title="Azure Storage Health Probe">
+                    <span class="pulse-dot {% if health.connected %}connected{% else %}error{% endif %}" id="pulseDot"></span>
+                    <span id="healthStatusText">
+                        {% if health.connected %}Azure Connected{% else %}Azure Offline{% endif %}
+                    </span>
+                </div>
+
+                <!-- Account Switcher Dropdown (for College Demonstration) -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);" class="d-none d-md-inline">Testing user:</span>
+                    <span class="pill-badge" style="background: var(--azure-blue-light); color: var(--azure-blue); border: 1px solid #BFDBFE;">{{ user }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Dashboard Content -->
+        <div class="app-content">
+
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div>
+                        {% for category, message in messages %}
+                            <div style="padding: 12px 18px; border-radius: var(--radius-md); font-size: 0.88rem; margin-bottom: 12px;
+                                {% if category == 'danger' %}background-color: var(--color-danger-bg); color: var(--color-danger); border: 1px solid #FECACA;
+                                {% elif category == 'success' %}background-color: var(--color-success-bg); color: var(--color-success); border: 1px solid #A7F3D0;
+                                {% else %}background-color: var(--color-info-bg); color: var(--color-info); border: 1px solid #BAE6FD;{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Notice Banner for Evaluation -->
+            <div style="background: linear-gradient(135deg, #0078D4, #0284C7); border-radius: var(--radius-lg); padding: 22px 28px; color: white; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; box-shadow: var(--shadow-md);">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 4px;">Welcome, {{ user }}!</h2>
+                    <p style="font-size: 0.88rem; opacity: 0.95; max-width: 700px;">
+                        All files uploaded under this session are isolated inside your private Azure Blob Storage prefix: 
+                        <code style="background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; font-size: 0.82rem;">{{ user }}/*</code>.
+                        Zero keys are exposed to the client.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.3); color: white;" onclick="document.getElementById('uploadSection').scrollIntoView({behavior: 'smooth'})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Upload File
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Metric Cards Grid -->
+            <section class="stats-grid" id="statsSection">
+                <!-- Total Files -->
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-label">Total Files</span>
+                        <div class="stat-icon blue">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="statTotalFiles">0</div>
+                        <div class="stat-subtext">Blobs stored under user prefix</div>
+                    </div>
+                </div>
+
+                <!-- Storage Usage -->
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-label">Storage Used</span>
+                        <div class="stat-icon purple">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="statStorageUsed">0 B</div>
+                        <div class="storage-progress-track">
+                            <div class="storage-progress-fill" id="storageProgressFill" style="width: 0%;"></div>
+                        </div>
+                        <div class="stat-subtext" id="storageQuotaText" style="margin-top: 6px;">0% of 100 MB demo quota</div>
+                    </div>
+                </div>
+
+                <!-- Security & Access Tier -->
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-label">Access Policy</span>
+                        <div class="stat-icon green">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="stat-value" style="font-size: 1.35rem; color: var(--color-success);">Private Blob</div>
+                        <div class="stat-subtext">No public access • Proxied streaming</div>
+                    </div>
+                </div>
+
+                <!-- Cloud Service -->
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-label">Deployment</span>
+                        <div class="stat-icon amber">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="stat-value" style="font-size: 1.35rem;">App Service</div>
+                        <div class="stat-subtext">Linux PaaS • Gunicorn WSGI</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Drag & Drop File Upload Section -->
+            <section class="upload-card" id="uploadSection">
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Upload Files to Azure Blob Storage
+                </h3>
+
+                <div class="dropzone-container" id="dropzone" role="button" tabindex="0" aria-label="File upload dropzone">
+                    <input type="file" id="fileInput" style="display: none;" aria-hidden="true">
+                    
+                    <div class="dropzone-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <div class="dropzone-title">Drag & drop files here, or click to browse</div>
+                    <div class="dropzone-desc">Files are validated on the backend and uploaded directly to your private Azure container (Max: {{ max_size_mb }} MB)</div>
+
+                    <div class="file-type-badges">
+                        <span class="pill-badge">PDF</span>
+                        <span class="pill-badge">DOCX</span>
+                        <span class="pill-badge">XLSX</span>
+                        <span class="pill-badge">PNG/JPG</span>
+                        <span class="pill-badge">ZIP</span>
+                        <span class="pill-badge">PY/JSON</span>
+                        <span class="pill-badge">+20 others</span>
+                    </div>
+                </div>
+
+                <!-- Live Upload Progress Track -->
+                <div class="upload-progress-wrapper" id="uploadProgress">
+                    <div class="upload-file-info">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                            </svg>
+                            <span id="uploadFilename">Uploading file...</span>
+                        </div>
+                        <span id="progressPercent" class="font-mono">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-active" id="progressBar"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File Browser & Table/Grid Section -->
+            <section class="browser-card" id="filesSection">
+                <!-- Toolbar Controls -->
+                <div class="browser-toolbar">
+                    <div class="toolbar-left">
+                        <div class="search-box">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text" id="searchInput" class="search-input" placeholder="Search files by name..." aria-label="Search files">
+                        </div>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <!-- Sort Selector -->
+                        <select id="sortSelect" class="form-input" style="padding: 8px 12px; font-size: 0.84rem; width: auto;" aria-label="Sort files">
+                            <option value="date-desc">Newest First</option>
+                            <option value="date-asc">Oldest First</option>
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="size-desc">Size (Large to Small)</option>
+                            <option value="size-asc">Size (Small to Large)</option>
+                        </select>
+
+                        <!-- View Switcher -->
+                        <div class="view-switcher-group" role="group" aria-label="View toggle">
+                            <button class="view-btn active" id="tableViewBtn" title="Table View" aria-label="Table View">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                                </svg>
+                            </button>
+                            <button class="view-btn" id="gridViewBtn" title="Grid View" aria-label="Grid View">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Filter Pills -->
+                <div class="category-filter-pills" role="tablist">
+                    <button class="filter-pill active" data-filter="all">All Files</button>
+                    <button class="filter-pill" data-filter="document">Documents</button>
+                    <button class="filter-pill" data-filter="image">Images</button>
+                    <button class="filter-pill" data-filter="archive">Archives</button>
+                    <button class="filter-pill" data-filter="code">Code & Data</button>
+                    <button class="filter-pill" data-filter="other">Other</button>
+                </div>
+
+                <!-- Table View -->
+                <div class="table-responsive" id="fileTableView">
+                    <table class="file-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Last Modified</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fileTableBody">
+                            <!-- Populated dynamically via dashboard.js -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Grid View -->
+                <div class="file-grid-container" id="fileGridView" style="display: none;">
+                    <div id="fileGridBody" style="display: contents;">
+                        <!-- Populated dynamically via dashboard.js -->
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state-box" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="empty-state-title">No files found</div>
+                    <div class="empty-state-desc">You haven't uploaded any files under this account yet, or your search filter didn't match any blobs.</div>
+                    <button class="btn btn-primary btn-sm" style="margin-top: 16px;" onclick="document.getElementById('fileInput').click()">
+                        Upload a File
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- ==============================================================================
+     Delete Confirmation Modal
+     ============================================================================== -->
+<div class="modal-backdrop" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3 class="modal-title" id="deleteModalTitle" style="color: var(--color-danger); display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Confirm File Deletion
+            </h3>
+            <button class="modal-close-btn" id="closeDeleteModalBtn" aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.92rem; margin-bottom: 12px;">
+                Are you sure you want to permanently delete this file from Azure Blob Storage?
+            </p>
+            <div style="background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; font-weight: 600;" class="font-mono" id="deleteFileName">
+                filename.ext
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">
+                Note: This action will invoke Azure SDK <code>delete_blob()</code> and cannot be undone.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">Delete File</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==============================================================================
+     File Preview Modal
+     ============================================================================== -->
+<div class="modal-backdrop" id="previewModal" role="dialog" aria-modal="true">
+    <div class="modal-window large">
+        <div class="modal-header">
+            <h3 class="modal-title" id="previewModalTitle">File Preview</h3>
+            <button class="modal-close-btn" id="closePreviewModalBtn" aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal-body" id="previewContainer">
+            <!-- Populated dynamically via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- ==============================================================================
+     Cloud Architecture & Viva Presentation Modal
+     ============================================================================== -->
+<div class="modal-backdrop" id="archModal" role="dialog" aria-modal="true">
+    <div class="modal-window large">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="brand-icon" style="width: 32px; height: 32px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                </div>
+                <h3 class="modal-title">Cloud Computing Architecture & Evaluation Guide</h3>
+            </div>
+            <button class="modal-close-btn" id="closeArchModalBtn" aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 18px;">
+                This system demonstrates key Cloud Computing principles required for enterprise and university evaluation:
+            </p>
+
+            <div class="architecture-grid">
+                <div class="arch-card">
+                    <div class="arch-card-title">Cloud Hosting (PaaS)</div>
+                    <div class="arch-card-val" id="archHosting">Azure App Service (Linux)</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Fully managed runtime with auto-healing and load balancing</div>
+                </div>
+                <div class="arch-card">
+                    <div class="arch-card-title">Object Storage</div>
+                    <div class="arch-card-val" id="archStorage">Azure Blob Storage (Hot Tier)</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">High availability, SLA 99.99%, server-side encryption</div>
+                </div>
+                <div class="arch-card">
+                    <div class="arch-card-title">Multi-Tenant Isolation</div>
+                    <div class="arch-card-val" id="archIsolation">Prefix Partitioning</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Strict prefix isolation per user: <code>&lt;user_id&gt;/*</code></div>
+                </div>
+                <div class="arch-card">
+                    <div class="arch-card-title">Application Server</div>
+                    <div class="arch-card-val" id="archServer">Gunicorn WSGI / Flask</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Multi-worker, asynchronous streaming backend</div>
+                </div>
+            </div>
+
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 8px;">Key Security & Cloud Principles Implemented</h4>
+            <ul class="concept-list">
+                <li class="concept-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span><strong>Zero Key Leakage:</strong> Storage credentials and connection strings are strictly retained on the backend; the client never receives storage keys.</span>
+                </li>
+                <li class="concept-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span><strong>Private Container Security:</strong> Container access level is private; anonymous public read access is explicitly forbidden.</span>
+                </li>
+                <li class="concept-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span><strong>Path Traversal Defense:</strong> Filenames are sanitized through <code>secure_filename()</code> to mitigate directory traversal attacks.</span>
+                </li>
+                <li class="concept-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span><strong>Chunked Stream Transfers:</strong> Download routes stream blobs in small chunks using <code>Response(stream_with_context())</code>, preserving server memory.</span>
+                </li>
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="document.getElementById('archModal').classList.remove('show')">Close Guide</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

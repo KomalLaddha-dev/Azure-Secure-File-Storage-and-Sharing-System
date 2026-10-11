@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Azure Secure File Storage{% endblock %}
+
+{% block content %}
+<div class="login-page-wrapper">
+    <div class="login-card" style="text-align: center; max-width: 500px;">
+        <div class="login-brand-icon" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </div>
+        <h1 class="login-title" style="margin-bottom: 6px;">Application Notice</h1>
+        <p class="login-subtitle" style="margin-bottom: 20px;">{{ error|default('An unexpected error occurred while processing your request.') }}</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="width: 100%;">
+            Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

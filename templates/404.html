@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found{% endblock %}
+
+{% block content %}
+<div class="login-page-wrapper">
+    <div class="login-card" style="text-align: center; max-width: 500px;">
+        <div class="login-brand-icon" style="background: linear-gradient(135deg, #EF4444, #F97316);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </div>
+        <h1 class="login-title" style="font-size: 2.2rem; margin-bottom: 4px;">404</h1>
+        <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Resource Not Found</h2>
+        <p class="login-subtitle" style="margin-bottom: 24px;">The requested page or cloud resource does not exist or has been relocated.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="width: 100%;">
+            Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
